@@ -524,7 +524,7 @@
     console.log('HR Panel - Sending GET request for duplicate check:', { employeeId, month, year });
     
     try {
-        const response = await fetch(`http://localhost:3000/api/employee/${employeeId}/${month}/${year}`);
+        const response = await fetch(`http://98.80.67.100:3012/api/employee/${employeeId}/${month}/${year}`);
         if (response.status === 404) {
             clearError('month');
             return true;
@@ -753,7 +753,7 @@
     const newSalary = currentSalary + incrementAmount;
 
     try {
-      const response = await fetch('http://localhost:3000/api/employee', {
+      const response = await fetch('http://98.80.67.100:3012/api/employee', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

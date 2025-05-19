@@ -1,10 +1,3 @@
-
-CREATE DATABASE employee_portal;
-
-
-\c employee_portal
-
-
 CREATE TABLE employee_records (
     id SERIAL PRIMARY KEY,
     employee_id VARCHAR(7) NOT NULL CHECK (employee_id ~ '^ATS0(?!000)\d{3}$'),
