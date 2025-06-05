@@ -495,9 +495,7 @@
           return showError(id, `${fieldName} is required`);
         }
         
-        // Handle cases like "123." or "123.0"
-        const cleanValue = value.endsWith('.') ? value.slice(0, -1) : value;
-        const numValue = parseFloat(cleanValue);
+        const numValue = parseFloat(value);
         if (isNaN(numValue)) {
           return showError(id, `${fieldName} must be a valid number`);
         }
@@ -505,45 +503,42 @@
           return showError(id, `${fieldName} must be at least ${min}`);
         }
         if (numValue > max) {
-          return showError(id, `${fieldName} must not exceed ${max.toLocaleString()}`);
+          return showError(id, `${fieldName} must not exceed ${max}`);
         }
         
-        // Check digit count for integer part only
-        const integerPart = cleanValue.split('.')[0] || cleanValue;
-        const digitCount = integerPart.replace(/[^0-9]/g, '').length;
-        
+        const digitCount = value.replace('.', '').length;
         if (id === 'current-salary' && digitCount > 7) {
           return showError(id, `${fieldName} must not exceed 7 digits`);
         }
-        if (id === 'bonus-amount' && digitCount > 7) {
-          return showError(id, `${fieldName} must not exceed 7 digits`);
+        if (id === 'bonus-amount' && digitCount > 5) {
+          return showError(id, `${fieldName} must not exceed 5 digits`);
         }
         
         clearError(id);
         return true;
       }
 
-      async function checkForDuplicateRecord(employeeId, month, year) {
-        if (!employeeId || !month || !year) return true;
-        
-        console.log('HR Panel - Sending GET request for duplicate check:', { employeeId, month, year });
-        
-        try {
-          const response = await fetch(`http://98.80.67.100:3012/api/employee/${employeeId}/${month}/${year}`);
-          if (response.status === 404) {
+     async function checkForDuplicateRecord(employeeId, month, year) {
+    if (!employeeId || !month || !year) return true;
+    
+    console.log('HR Panel - Sending GET request for duplicate check:', { employeeId, month, year });
+    
+    try {
+        const response = await fetch(`http://98.80.67.100:3012/api/employee/${employeeId}/${month}/${year}`);
+        if (response.status === 404) {
             clearError('month');
             return true;
-          }
-          if (response.ok) {
+        }
+        if (response.ok) {
             showError('month', `Record already exists for ${employeeId} in ${month} ${year}`);
             return false;
-          }
-          throw new Error('Error checking for duplicates');
-        } catch (e) {
-          console.log('HR Panel - Error checking duplicates:', e);
-          return true;
         }
-      }
+        throw new Error('Error checking for duplicates');
+    } catch (e) {
+        console.log('HR Panel - Error checking duplicates:', e);
+        return true;
+    }
+}
 
       function setUpYearDropdown() {
         const yearSelect = document.getElementById('year');
@@ -624,7 +619,7 @@
         
         document.getElementById('current-salary').addEventListener('input', function() {
           if (this.value.trim().length > 0) {
-            validateNumeric('current-salary', 'Current Salary', 0, 1000000);
+            validateNumeric('current-salary', 'Current Salary', 0);
           } else {
             clearError('current-salary');
           }
@@ -640,7 +635,7 @@
         
         document.getElementById('bonus-amount').addEventListener('input', function() {
           if (this.value.trim().length > 0) {
-            validateNumeric('bonus-amount', 'Bonus Amount', 0, 1000000);
+            validateNumeric('bonus-amount', 'Bonus Amount', 0);
           } else {
             clearError('bonus-amount');
           }
@@ -679,35 +674,14 @@
       });
 
       document.getElementById('current-salary').addEventListener('input', function(e) {
-        let value = e.target.value.replace(/[^0-9.]/g, '');
-        const decimalCount = (value.match(/\./g) || []).length;
+        e.target.value = e.target.value.replace(/[^0-9.]/g, '');
+        const decimalCount = (e.target.value.match(/\./g) || []).length;
         if (decimalCount > 1) {
-          value = value.replace(/\.(?=.*\.)/g, '');
+          e.target.value = e.target.value.replace(/\.(?=.*\.)/g, '');
         }
-        
-        const parts = value.split('.');
-        let integerPart = parts[0];
-        const decimalPart = parts[1] || '';
-        
-        // Remove leading zeros from the integer part, but allow a single "0"
-        if (integerPart.length > 1 && integerPart.startsWith('0')) {
-          integerPart = integerPart.replace(/^0+/, '') || '0';
+        if (e.target.value.replace('.', '').length > 7) {
+          e.target.value = e.target.value.slice(0, 7 + decimalCount);
         }
-        
-        // Restrict integer part to 7 digits
-        if (integerPart.length > 7) {
-          integerPart = integerPart.slice(0, 7);
-        }
-        
-        // Restrict decimal part to 2 digits
-        let newValue = integerPart;
-        if (decimalPart) {
-          const trimmedDecimal = decimalPart.slice(0, 2);
-          newValue = `${integerPart}.${trimmedDecimal}`;
-        }
-        
-        e.target.value = newValue;
-        console.log('Current Salary Input:', e.target.value);
       });
 
       document.getElementById('increment-percentage').addEventListener('input', function(e) {
@@ -722,34 +696,14 @@
       });
 
       document.getElementById('bonus-amount').addEventListener('input', function(e) {
-        let value = e.target.value.replace(/[^0-9.]/g, '');
-        const decimalCount = (value.match(/\./g) || []).length;
+        e.target.value = e.target.value.replace(/[^0-9.]/g, '');
+        const decimalCount = (e.target.value.match(/\./g) || []).length;
         if (decimalCount > 1) {
-          value = value.replace(/\.(?=.*\.)/g, '');
+          e.target.value = e.target.value.replace(/\.(?=.*\.)/g, '');
         }
-        
-        const parts = value.split('.');
-        let integerPart = parts[0];
-        const decimalPart = parts[1] || '';
-        
-        // Remove leading zeros from the integer part, but allow a single "0"
-        if (integerPart.length > 1 && integerPart.startsWith('0')) {
-          integerPart = integerPart.replace(/^0+/, '') || '0';
+        if (e.target.value.replace('.', '').length > 5) {
+          e.target.value = e.target.value.slice(0, 5 + decimalCount);
         }
-        
-        // Restrict integer part to 7 digits
-        if (integerPart.length > 7) {
-          integerPart = integerPart.slice(0, 7);
-        }
-        
-        // Restrict decimal part to 2 digits
-        let newValue = integerPart;
-        if (decimalPart) {
-          const trimmedDecimal = decimalPart.slice(0, 2);
-          newValue = `${integerPart}.${trimmedDecimal}`;
-        }
-        
-        e.target.value = newValue;
       });
 
       function showMessage(elementId, message, type) {
@@ -764,96 +718,84 @@
       }
 
       document.getElementById('hr-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
+  e.preventDefault();
 
-        const isValidEmployeeId = validateEmployeeId(document.getElementById('employee-id').value.trim());
-        const isValidName = validateTextField('employee-name', 'Employee Name');
-        const isValidDepartment = validateSelect('department', 'Department');
-        const isValidPosition = validateTextField('position', 'Position');
-        const isValidMonth = validateSelect('month', 'Month');
-        const isValidYear = validateSelect('year', 'Year');
-        const isValidSalary = validateNumeric('current-salary', 'Current Salary', 0, 1000000);
-        const isValidIncrement = validateNumeric('increment-percentage', 'Increment Percentage', 0, 100);
-        const isValidBonus = validateNumeric('bonus-amount', 'Bonus Amount', 0, 1000000);
-        const isValidComments = validateTextField('comments', 'Performance Notes');
+  const isValidEmployeeId = validateEmployeeId(document.getElementById('employee-id').value.trim());
+  const isValidName = validateTextField('employee-name', 'Employee Name');
+  const isValidDepartment = validateSelect('department', 'Department');
+  const isValidPosition = validateTextField('position', 'Position');
+  const isValidMonth = validateSelect('month', 'Month');
+  const isValidYear = validateSelect('year', 'Year');
+  const isValidSalary = validateNumeric('current-salary', 'Current Salary', 0);
+  const isValidIncrement = validateNumeric('increment-percentage', 'Increment Percentage', 0, 100);
+  const isValidBonus = validateNumeric('bonus-amount', 'Bonus Amount', 0);
+  const isValidComments = validateTextField('comments', 'Performance Notes');
 
-        const employeeId = document.getElementById('employee-id').value.trim();
-        const month = document.getElementById('month').value;
-        const year = document.getElementById('year').value;
+  const employeeId = document.getElementById('employee-id').value.trim();
+  const month = document.getElementById('month').value;
+  const year = document.getElementById('year').value;
 
-        const isNoDuplicate = await checkForDuplicateRecord(employeeId, month, year);
+  const isNoDuplicate = await checkForDuplicateRecord(employeeId, month, year);
 
-        if (isValidEmployeeId && isValidName && isValidDepartment && isValidPosition && 
-            isValidMonth && isValidYear && isValidSalary && isValidIncrement && 
-            isValidBonus && isValidComments && isNoDuplicate) {
+  if (isValidEmployeeId && isValidName && isValidDepartment && isValidPosition && 
+      isValidMonth && isValidYear && isValidSalary && isValidIncrement && 
+      isValidBonus && isValidComments && isNoDuplicate) {
 
-          const employeeName = document.getElementById('employee-name').value.trim();
-          const department = document.getElementById('department').value;
-          const position = document.getElementById('position').value.trim();
-          const currentSalary = parseFloat(document.getElementById('current-salary').value);
-          const incrementPercentage = parseFloat(document.getElementById('increment-percentage').value);
-          const bonusAmount = parseFloat(document.getElementById('bonus-amount').value);
-          const comments = document.getElementById('comments').value.trim();
+    const employeeName = document.getElementById('employee-name').value.trim();
+    const department = document.getElementById('department').value;
+    const position = document.getElementById('position').value.trim();
+    const currentSalary = parseFloat(document.getElementById('current-salary').value);
+    const incrementPercentage = parseFloat(document.getElementById('increment-percentage').value);
+    const bonusAmount = parseFloat(document.getElementById('bonus-amount').value);
+    const comments = document.getElementById('comments').value.trim();
 
-          const incrementAmount = currentSalary * (incrementPercentage / 100);
-          const newSalary = currentSalary + incrementAmount;
+    const incrementAmount = currentSalary * (incrementPercentage / 100);
+    const newSalary = currentSalary + incrementAmount;
 
-          try {
-            const response = await fetch('http://98.80.67.100:3012/api/employee', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                employeeId, employeeName, department, position, month, year,
-                currentSalary, incrementPercentage, bonusAmount, comments
-              })
-            });
-
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error || 'Failed to save employee details');
-            }
-
-            const record = await response.json();
-
-            // Parse numeric fields from the server response
-            const parsedNewSalary = parseFloat(record.new_salary);
-
-            // Update the summary display with formatted values
-            document.getElementById('summary-employee').textContent = `${employeeName} (${employeeId})`;
-            document.getElementById('summary-current').textContent = `₹${currentSalary.toFixed(2)}`;
-            document.getElementById('summary-increment').textContent = `₹${incrementAmount.toFixed(2)} (${incrementPercentage.toFixed(2)}%)`;
-            document.getElementById('summary-bonus').textContent = `₹${bonusAmount.toFixed(2)}`;
-            document.getElementById('summary-new-salary').textContent = `₹${parsedNewSalary.toFixed(2)}`;
-            document.getElementById('summary-effective').textContent = `${month} ${year}`;
-
-            const calculationDisplay = document.getElementById('calculation-display');
-            calculationDisplay.classList.add('active');
-
-            showMessage('hr-message', 'Employee details saved successfully!', 'success');
-
-            setTimeout(() => {
-              this.reset();
-              setUpYearDropdown();
-              setTimeout(() => {
-                calculationDisplay.classList.remove('active');
-              }, 5000);
-            }, 3000);
-          } catch (error) {
-            console.error('Server error:', error.message);
-            showMessage('hr-message', error.message || 'Failed to save employee details due to server error', 'error');
-          }
-        } else {
-          if (!isValidSalary) {
-            showMessage('hr-message', 'Please check the Current Salary field for valid input', 'error');
-          } else if (!isValidIncrement) {
-            showMessage('hr-message', 'Please check the Increment Percentage field for valid input', 'error');
-          } else if (!isValidBonus) {
-            showMessage('hr-message', 'Please check the Bonus Amount field for valid input', 'error');
-          } else {
-            showMessage('hr-message', 'Please correct the errors in the form', 'error');
-          }
-        }
+    try {
+      const response = await fetch('http://98.80.67.100:3012/api/employee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employeeId, employeeName, department, position, month, year,
+          currentSalary, incrementPercentage, bonusAmount, comments
+        })
       });
+
+      if (!response.ok) {
+        throw new Error((await response.json()).error);
+      }
+
+      const record = await response.json();
+
+      // Parse numeric fields from the server response
+      const parsedNewSalary = parseFloat(record.new_salary);
+
+      // Update the summary display with formatted values
+      document.getElementById('summary-employee').textContent = `${employeeName} (${employeeId})`;
+      document.getElementById('summary-current').textContent = `₹${currentSalary.toFixed(2)}`;
+      document.getElementById('summary-increment').textContent = `₹${incrementAmount.toFixed(2)} (${incrementPercentage.toFixed(2)}%)`;
+      document.getElementById('summary-bonus').textContent = `₹${bonusAmount.toFixed(2)}`;
+      document.getElementById('summary-new-salary').textContent = `₹${parsedNewSalary.toFixed(2)}`;
+      document.getElementById('summary-effective').textContent = `${month} ${year}`;
+
+      const calculationDisplay = document.getElementById('calculation-display');
+      calculationDisplay.classList.add('active');
+
+      showMessage('hr-message', 'Employee details saved successfully!', 'success');
+
+      setTimeout(() => {
+        this.reset();
+        setUpYearDropdown();
+        setTimeout(() => {
+          calculationDisplay.classList.remove('active');
+        }, 5000);
+      }, 3000);
+    } catch (error) {
+      showMessage('hr-message', error.message || 'Failed to save employee details', 'error');
+    }
+  }
+});
 
       setUpYearDropdown();
       setupRealTimeValidation();
