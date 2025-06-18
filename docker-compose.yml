@@ -12,7 +12,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5442:5432"
+      - "5008:5432"
 
   backend:
     build: ./Backend
@@ -20,7 +20,7 @@ services:
     depends_on:
       - postgres
     ports:
-      - "3012:3012"
+      - "3008:3008"
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -33,14 +33,14 @@ services:
     build: ./Employee-Increment
     container_name: increment_employee
     ports:
-      - "9019:80"
+      - "7017:80"
     restart: always
 
   hr-frontend:
     build: ./HR-Increment
     container_name: increment_hr
     ports:
-      - "9020:80"
+      - "7018:80"
     restart: always
 
 volumes:
